@@ -1,28 +1,15 @@
-import { jwtVerify, SignJWT } from "jose";
-
-interface UserJWTPayload {
-    jti: string,
-    iat:number
-}
-
-export const getJWTSecretKey = () => {
-  const secret = process.env.JWT_SECRET_KEY;
-
-  if (!secret || secret.length === 0) {
-    throw new Error("Environmental key JWT_SECRET_KEY does not exist");
-  }
-
-  return secret;
-};
+import { verify } from "jsonwebtoken";
 
 export const verifyAuth = async (token: string) => {
   try {
-    const verified = await jwtVerify(
-      token,
-      new TextEncoder().encode(getJWTSecretKey())
-    );
+    const response = await fetch(`http://localhost:3000/api/users`, {
+      method: "GET",
+      body: JSON.stringify({ token }),
+    });
 
-    return verified.payload as UserJWTPayload
+    const user = await response.json()
+    
+    return user
   } catch (err) {
     throw new Error("Your token has expired");
   }

@@ -1,12 +1,6 @@
 import pgInstance from "@/lib/pgInstance";
 import { NextResponse, NextRequest } from "next/server";
 
-type Body = {
-  name: string;
-  booktype: string;
-  available: boolean;
-};
-
 export async function GET() {
   let query = "SELECT * from books";
   const data = await pgInstance.unsafe(query);
@@ -17,7 +11,7 @@ export async function GET() {
 
 // error { "message": "syntax error at or near \"to\"" }
 export async function POST(request: Request) {
-  const { name, booktype, available } = (await request.json()) as Body;
+  const { name, booktype, available } = (await request.json()) as Books;
 
   try {
     let query = `INSERT INTO books (name, booktype, available) VALUES ('${name}', '${booktype}', '${available}') returning *`;
