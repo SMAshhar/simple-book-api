@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     console.log(token);
 
     const verifiedToken = verify(
-      JSON.stringify({ token }),
+      token as string,
       process.env.JWT_SECRET_KEY as string
     ) as Record<string, string>;
     console.log(verifiedToken.payload);
