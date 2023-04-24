@@ -1,19 +1,17 @@
 import pgInstance from "@/src/lib/pgInstance";
 import { NextRequest, NextResponse } from "next/server";
-import qs from "query-string";
 
-export async function GET(request: NextRequest) {
+type Params = {
+  bookId?: string;
+};
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Params }
+) {
   try {
-    const queryParams = qs.parse(request.nextUrl.searchParams.toString());
-    let query = "SELECT * from books";
-
-    if (queryParams.type) {
-      query += ` WHERE type='${queryParams.type}'`;
-    }
-
-    if (queryParams.limit) {
-      query += ` LIMIT ${queryParams.limit}`;
-    }
+    const { bookId } = params;
+    const query = `SELECT * FROM books WHERE id = ${bookId}`;
 
     const data = await pgInstance.unsafe(query);
 

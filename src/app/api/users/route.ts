@@ -1,27 +1,24 @@
-import pgInstance from "@/lib/pgInstance";
+import pgInstance from "@/src/lib/pgInstance";
 import { verify } from "jsonwebtoken";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.split(" ")[1];
-    console.log(token);
+    const { token } = await req.json();
 
-    const verifiedToken = verify(
-      token as string,
-      process.env.JWT_SECRET_KEY as string
+    const decodedToken = verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET!
     ) as Record<string, string>;
-    console.log(verifiedToken.payload);
 
-    const userEmail = verifiedToken.payload;
-    const query = `SELECT * from users WHERE email = '${userEmail}'`;
+    const query = `SELECT * from users WHERE email = '${decodedToken.email}'`;
+    
 
-    console.log("Reached after query definition");
-    const user = await pgInstance.unsafe(query);
+    const decodedUser = await pgInstance.unsafe(query);
 
-    return NextResponse.json(user[0]);
+    return NextResponse.json(decodedUser[0]);
   } catch (error) {
     console.log(error);
-    throw new Error("Not registered");
+    throw new Error("You are not permitted");
   }
 }

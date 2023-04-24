@@ -1,29 +1,38 @@
-// middleware.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "./lib/auth";
 
-// This function can be marked `async` if using `await` inside
-export async function middleware(request: Request) {
+export async function middleware(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.split(" ")[1];
+    const authToken = request.headers.get("authorization")?.split(" ")[1];
+    const host = request.headers.get("host")!;
 
-    if (!token) {
-      return NextResponse.json({ message: "UNAUTHORIZED" });
+    if (!authToken) {
+      return NextResponse.json(
+        { error: "not permitted" },
+        {
+          status: 401,
+        }
+      );
     }
 
-    const verifiedToken = await verifyAuth(token)
+    // api call to fetch user data from database
+    const decodedUser = await verifyAuth(authToken, host);
 
+    // passing the data by headers
     const headers = new Headers(request.headers);
-    headers.set("userEmail", JSON.stringify(verifiedToken.id));
+    headers.set("userId", JSON.stringify(decodedUser.id));
 
     return NextResponse.next({ headers });
-  } catch (err) {
-    console.log(err);
-    return NextResponse.json({ message: err });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      {
+        status: 500,
+      }
+    );
   }
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
-  matcher: "/api/orders/:path*",
+  matcher: ["/api/orders/:path*"],
 };
