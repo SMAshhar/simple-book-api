@@ -1,65 +1,48 @@
-import pgInstance from "@/src/lib/pgInstance";
-import { NextRequest, NextResponse } from "next/server";
+import pgInstance from "@/lib/pgInstance";
+import { NextResponse, NextRequest } from "next/server";
 
 type Body = {
-  bookId?: string;
-  customerName?: string;
+    bookId?: string;
+    customerName?: string
 };
 
-// submit a new order
-export async function POST(request: NextRequest) {
-  try {
-    const { bookId, customerName } = (await request.json()) as Body;
-    const userId = JSON.parse(request.headers.get("userId")!);
+// getting all orders
+export async function GET() {
+  let query = "SELECT * from orders";
+  const data = await pgInstance.unsafe(query);
+  return NextResponse.json(data, {
+    status: 200,
+  });
+}
 
-    if (!bookId || !customerName) {
-      return NextResponse.json(
-        { error: "required fields missing." },
-        {
-          status: 403,
-        }
-      );
+// Posting new orders
+export async function POST(request:Request) {
+    const {bookId, customerName } : Body = await request.json()
+    console.log(bookId, customerName)
+    try {
+        let query = `INSERT INTO orders (bookid, customername) VALUES ('${bookId}',' ${customerName}') returning *`;
+        const data = await pgInstance.unsafe(query);
+        return NextResponse.json(data, {
+          status: 201,
+        });
+      } catch (error: any) {
+        console.log(error.message);
+        return NextResponse.json({ message: error.message });
+      }
     }
 
-    const query = `INSERT INTO "orders" (createdBy, bookId, customer_name, quantity)
-VALUES (${userId}, ${bookId}, '${customerName}', 1) returning *`;
-
-    const response = await pgInstance.unsafe(query);
-
-    return NextResponse.json(response, {
-      status: 201,
-    });
-  } catch (error: any) {
-    console.log(error);
-
-    return NextResponse.json(
-      { error: error.message || "Somethineg went wrong" },
-      {
-        status: 500,
+// Updating order
+export async function PUT(request:Request) {
+    const {orderId, customerName } = await request.json()
+    console.log(orderId, customerName)
+    try {
+        let query = `UPDATE orders SET customerName =  '${customerName}' WHERE orderId = '${orderId}' returning *`;
+        const data = await pgInstance.unsafe(query);
+        return NextResponse.json(data, {
+          status: 201,
+        });
+      } catch (error: any) {
+        console.log(error.message);
+        return NextResponse.json({ message: error.message });
       }
-    );
-  }
-}
-
-// get all orders
-export async function GET(request: NextRequest) {
-  try {
-    const userId = JSON.parse(request.headers.get("userId")!);
-    const query = `SELECT * FROM orders WHERE createdBy = ${userId}`;
-
-    const response = await pgInstance.unsafe(query);
-
-    return NextResponse.json(response, {
-      status: 200,
-    });
-  } catch (error: any) {
-    console.log(error);
-
-    return NextResponse.json(
-      { error: error.message || "Somethineg went wrong" },
-      {
-        status: 500,
-      }
-    );
-  }
-}
+    }

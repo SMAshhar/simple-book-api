@@ -1,33 +1,27 @@
-import pgInstance from "@/src/lib/pgInstance";
-import { NextRequest, NextResponse } from "next/server";
-import qs from "query-string";
+import pgInstance from "@/lib/pgInstance";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  let query = "SELECT * from books";
+  const data = await pgInstance.unsafe(query);
+  return NextResponse.json(data, {
+    status: 200,
+  });
+}
+
+// error { "message": "syntax error at or near \"to\"" }
+export async function POST(request: Request) {
+  const { name, booktype, available } = (await request.json()) as Books;
+
   try {
-    const queryParams = qs.parse(request.nextUrl.searchParams.toString());
-    let query = "SELECT * from books";
-
-    if (queryParams.type) {
-      query += ` WHERE type='${queryParams.type}'`;
-    }
-
-    if (queryParams.limit) {
-      query += ` LIMIT ${queryParams.limit}`;
-    }
-
+    let query = `INSERT INTO books (name, booktype, available) VALUES ('${name}', '${booktype}', '${available}') returning *`;
+    console.log(query)
     const data = await pgInstance.unsafe(query);
-
     return NextResponse.json(data, {
-      status: 200,
+      status: 201,
     });
   } catch (error: any) {
-    console.log(error);
-
-    return NextResponse.json(
-      { error: error.message || "Somethineg went wrong" },
-      {
-        status: 500,
-      }
-    );
+    console.log(error.message);
+    return NextResponse.json({ message: error.message });
   }
 }
